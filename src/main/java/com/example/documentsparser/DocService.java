@@ -14,11 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class DocService {
-
-//    private final File ROOT_DIR = new File(System.getProperty("user.dir") + "/documents");
-//    private final File TMP_DIR;
 
     private final TxtParser txtParser;
     private final XlsxParser xlsxParser;
@@ -32,18 +30,28 @@ public class DocService {
         docxParser = new DocxParser();
     }
 
-    public Map<String, Set<String>> findByRegex(File inputFile, Set<String> patterns) {
+    public Set<String> findByRegex(File inputFile, Pattern pattern) {
+        DocParser parser = getFileParser(inputFile);
+        return parser.findByRegex(inputFile, pattern);
+    }
+
+    public Set<String> findByRegex(File inputFile, String pattern) {
+        return findByRegex(inputFile, Pattern.compile(pattern));
+    }
+
+    public Map<String, Set<String>> findByRegex(File inputFile, Set<Pattern> patterns) {
         Map<String, Set<String>> result = new HashMap<>();
         DocParser parser = getFileParser(inputFile);
-        for (String pattern : patterns){
-            result.put(pattern, parser.findByRegex(inputFile, Pattern.compile(pattern)));
+        for (Pattern pattern : patterns){
+            result.put(pattern.toString(), parser.findByRegex(inputFile, pattern));
         }
         return result;
     }
 
-    public Set<String> findByRegex(File inputFile, String pattern) {
-        DocParser parser = getFileParser(inputFile);
-        return parser.findByRegex(inputFile, Pattern.compile(pattern));
+    public Map<String, Set<String>> findByRegex(File inputFile, String... patterns) {
+        Set<Pattern> patternSet = Arrays.stream(patterns)
+                .map(Pattern::compile).collect(Collectors.toSet());
+        return findByRegex(inputFile, patternSet);
     }
 
     public void replaceContent(File inputFile, File outputFile, Map<String, String> replaces) {
@@ -85,83 +93,3 @@ public class DocService {
         return name.get(0).trim() + " от " + LocalDateTime.now().format(dateTimeFormat) + "." + name.get(name.size()-1);
     }
 }
-
-//
-//    private final TxtParser txtParser = new TxtParser();
-//    private final XlsxParser xlsxParser = new XlsxParser();
-//    private final DocxParser docxParser = new DocxParser();
-//
-//    @Getter private final File DOCS_DIR;
-//    @Getter private final File TEMPLATES_FOLDER;
-//    @Getter private final File OUTPUT_FOLDER;
-//
-//    public DocService(String rootDir) {
-//        DOCS_DIR = new File(rootDir);
-//        TEMPLATES_FOLDER = new File(DOCS_DIR + "/templates");
-//        OUTPUT_FOLDER = new File(DOCS_DIR + "/output");
-//        DOCS_DIR.mkdir();
-//        TEMPLATES_FOLDER.mkdir();
-//        OUTPUT_FOLDER.mkdir();
-//    }
-//
-//    public DpsDocTemplate getTemplate(String templateName) {
-//        DpsDocTemplate dpsDocTemplate = new DpsDocTemplate(templateName);
-//        dpsDocTemplate.setSourceFile(getTemplateFile(templateName));
-//        readTemplate(dpsDocTemplate);
-//        return dpsDocTemplate;
-//    }
-//
-//    public void parseDocument(DpsDocTemplate dpsDocTemplate, String resultName) {
-//        dpsDocTemplate.setSourceFile(getTemplateFile(dpsDocTemplate.getName()));
-//        DocParser parser = getFileParser(dpsDocTemplate.getSourceFile());
-//
-//        parser.parseDocument(dpsDocTemplate,
-//                createOutputFile(resultName + getFileType(dpsDocTemplate.getSourceFile())));
-//    }
-//
-//    private void readTemplate(DpsDocTemplate dpsDocTemplate) {
-//        DocParser parser = getFileParser(dpsDocTemplate.getSourceFile());
-//        if (parser != null) parser.initTemplate(dpsDocTemplate);
-//    }
-//
-//    private File getTemplateFile(String templateName) {
-//        return new File(TEMPLATES_FOLDER + "/" + templateName);
-//    }
-//
-//    private File createOutputFile(String fileName) {
-//        File output = new File(OUTPUT_FOLDER + "/" + fileName);
-//        try {
-//            output.createNewFile();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        return output;
-//    }
-//
-//    private String getFileType(File file) {
-//        if (file.isDirectory()) return "directory";
-//
-//        if (file.getName().contains(".xlsx")) {
-//            return ".xlsx";
-//        } else if (file.getName().contains(".txt")) {
-//            return ".txt";
-//        } else if (file.getName().contains(".docx")) {
-//            return ".docx";
-//        }
-//
-//        return "";
-//    }
-//
-//    private DocParser getFileParser(File file) {
-//        if (file.isDirectory()) return null;
-//
-//        if (file.getName().contains(".xlsx")) {
-//            return xlsxParser;
-//        } else if (file.getName().contains(".txt")) {
-//            return txtParser;
-//        } else if (file.getName().contains(".docx")) {
-//            return docxParser;
-//        }
-//
-//        return null;
-//    }
